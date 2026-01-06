@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  mysqldb:
+    image: mysql:8.0
+    container_name: mysqldb
+    ports:
+      - "3306:3306"
+    environment:
+      # [수정] .env 파일의 값을 가져옴
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./db_data:/var/lib/mysql
+
+  userservice:
+    build: ./userservice
+    container_name: userservice
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      - mysqldb
+
+  orderservice:
+    build: ./orderservice
+    container_name: orderservice
+    ports:
+      - "8082:8080"
+    environment:
+      USER_SERVICE_URL: http://userservice:8080
+    depends_on:
+      - userservice

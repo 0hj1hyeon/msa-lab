@@ -1,0 +1,4 @@
+rootProject.name = 'msa-lab'
+
+include 'userservice'
+include 'orderservice'
