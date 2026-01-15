@@ -2,3 +2,5 @@ rootProject.name = 'msa-lab'
 
 include 'userservice'
 include 'orderservice'
+include 'discoveryservice'
+include 'apigateway'
