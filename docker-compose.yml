@@ -73,6 +73,18 @@ services:
     networks:
       - msa-network
 
+  configservice:
+    build:
+      context: ./configservice
+      dockerfile: Dockerfile
+    container_name: configservice
+    ports:
+      - "8888:8888"
+    networks:
+      - msa-network
+    depends_on:
+      - discoveryservice
+
 networks:
   msa-network:
     driver: bridge
