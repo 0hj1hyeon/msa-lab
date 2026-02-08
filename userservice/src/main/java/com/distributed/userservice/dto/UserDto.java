@@ -2,6 +2,8 @@ package com.distributed.userservice.dto;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class UserDto {
     private String email;
@@ -11,4 +13,6 @@ public class UserDto {
 
     private String userId;
     private String encryptedPwd;
+
+    private List<ResponseOrder> orders;
 }
