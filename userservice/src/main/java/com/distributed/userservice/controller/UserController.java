@@ -21,6 +21,13 @@ public class UserController {
         return "It's Working in User Service";
     }
 
+    // [추가] 사용자 상세 정보 조회 (주문 내역 포함)
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserDto> getUser(@PathVariable("userId") String userId) {
+        UserDto userDto = userService.getUserByUserId(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(userDto);
+    }
+
     @PostMapping("/signup")
     public ResponseEntity<UserDto> createUser(@RequestBody UserDto userDto) {
         UserDto createdUser = userService.createUser(userDto);
