@@ -35,4 +35,4 @@ jobs:
           context: .
           file: ./apigateway/Dockerfile # 폴더명 일치
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/api-gateway:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/apigateway:latest

@@ -35,4 +35,4 @@ jobs:
           context: .
           file: ./discoveryservice/Dockerfile # 폴더명 일치
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/discovery-service:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/discoveryservice:latest

@@ -44,4 +44,4 @@ jobs:
           context: . # 최상위 루트 기준
           file: ./userservice/Dockerfile # Dockerfile 위치 명시
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/user-service:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/userservice:latest

@@ -17,7 +17,7 @@ FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
 
 # 빌드 단계에서 생성된 jar 파일만 가져옴
-COPY api-gateway/build/libs/*.jar app.jar
+COPY apigateway/build/libs/*.jar app.jar
 
 # 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]

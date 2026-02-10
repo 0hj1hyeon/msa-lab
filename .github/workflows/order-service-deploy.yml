@@ -35,4 +35,4 @@ jobs:
           context: .
           file: ./orderservice/Dockerfile # 폴더명 일치
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/order-service:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/orderservice:latest
