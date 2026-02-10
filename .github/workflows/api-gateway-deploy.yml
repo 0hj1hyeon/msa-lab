@@ -1,0 +1,38 @@
+name: Java CI/CD with Docker for API Gateway
+
+on:
+  push:
+    branches: [ "main", "ci/github-actions" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 모듈명 :api-gateway 일치
+      - name: Build with Gradle
+        run: ./gradlew :api-gateway:clean :api-gateway:bootJar -x test
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./api-gateway/Dockerfile # 폴더명 일치
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/api-gateway:latest
