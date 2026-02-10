@@ -21,7 +21,7 @@ jobs:
 
       # 모듈명 :order-service 일치
       - name: Build with Gradle
-        run: ./gradlew :order-service:clean :order-service:bootJar -x test
+        run: ./gradlew :orderservice:clean :orderservice:bootJar -x test
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -33,6 +33,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./order-service/Dockerfile # 폴더명 일치
+          file: ./orderservice/Dockerfile # 폴더명 일치
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/order-service:latest

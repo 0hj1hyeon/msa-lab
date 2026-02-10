@@ -21,7 +21,7 @@ jobs:
 
       # 모듈명 :discovery-service 일치
       - name: Build with Gradle
-        run: ./gradlew :discovery-service:clean :discovery-service:bootJar -x test
+        run: ./gradlew :discoveryservice:clean :discoveryservice:bootJar -x test
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -33,6 +33,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./discovery-service/Dockerfile # 폴더명 일치
+          file: ./discoveryservice/Dockerfile # 폴더명 일치
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/discovery-service:latest

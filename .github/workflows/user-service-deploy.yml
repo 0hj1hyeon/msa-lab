@@ -42,6 +42,6 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: . # 최상위 루트 기준
-          file: ./user-service/Dockerfile # Dockerfile 위치 명시
+          file: ./userservice/Dockerfile # Dockerfile 위치 명시
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/user-service:latest
