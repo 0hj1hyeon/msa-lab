@@ -12,12 +12,14 @@ COPY . .
 RUN chmod +x gradlew
 RUN ./gradlew bootJar -x test
 
+# ---------------------------------------------------
+
 # 2. 실행 단계 (Runner Stage)
 FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
 
-# 빌드 단계에서 생성된 jar 파일만 가져옴
-COPY discoveryservice/build/libs/*.jar app.jar
+# [핵심 수정] --from=builder 옵션을 추가하고, builder 안의 절대 경로(/app/build/libs/)를 지정합니다.
+COPY --from=builder /app/discoveryservice/build/libs/*.jar app.jar
 
 # 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]
