@@ -2,6 +2,7 @@ services:
   mysqldb:
     image: mysql:8.0
     container_name: mysqldb
+    restart: unless-stopped
     ports:
       - "3307:3306"
     environment:
@@ -17,59 +18,12 @@ services:
       timeout: 5s
       retries: 5
 
-  # [추가] 유레카 서버 (가장 먼저 켜져야 함)
   discoveryservice:
     build: ./discoveryservice
     container_name: discoveryservice
+    restart: unless-stopped
     ports:
       - "8761:8761"
-    networks:
-      - msa-network
-
-  userservice:
-    build: ./userservice
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      # [추가] 유레카 서버 주소 알려주기
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
-    depends_on:
-      mysqldb:
-        condition: service_healthy
-      discoveryservice:
-        condition: service_started
-    networks:
-      - msa-network
-
-  orderservice:
-    build: ./orderservice
-    ports:
-      - "8082-8085:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      # [추가] 유레카 서버 주소 알려주기
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
-    depends_on:
-      mysqldb:
-        condition: service_healthy
-      discoveryservice:
-        condition: service_started
-    networks:
-      - msa-network
-
-  apigateway:
-    build: ./apigateway
-    container_name: apigateway
-    ports:
-      - "8000:8000"
-    environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
-    depends_on:
-      - discoveryservice
     networks:
       - msa-network
 
@@ -78,12 +32,73 @@ services:
       context: ./configservice
       dockerfile: Dockerfile
     container_name: configservice
+    restart: unless-stopped
     ports:
       - "8888:8888"
+    environment:
+      CONFIG_GIT_URI: ${CONFIG_GIT_URI}
+      CONFIG_GIT_LABEL: ${CONFIG_GIT_LABEL:-main}
+      CONFIG_GIT_USERNAME: ${CONFIG_GIT_USERNAME:-}
+      CONFIG_GIT_TOKEN: ${CONFIG_GIT_TOKEN:-}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
     networks:
       - msa-network
     depends_on:
-      - discoveryservice
+      discoveryservice:
+        condition: service_started
+
+  userservice:
+    build: ./userservice
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+      discoveryservice:
+        condition: service_started
+      configservice:
+        condition: service_started
+    networks:
+      - msa-network
+
+  orderservice:
+    build: ./orderservice
+    restart: unless-stopped
+    ports:
+      - "8082-8085:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+      discoveryservice:
+        condition: service_started
+      configservice:
+        condition: service_started
+    networks:
+      - msa-network
+
+  apigateway:
+    build: ./apigateway
+    container_name: apigateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
+    depends_on:
+      discoveryservice:
+        condition: service_started
+    networks:
+      - msa-network
 
 networks:
   msa-network:
