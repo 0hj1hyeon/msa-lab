@@ -7,3 +7,4 @@ out/
 
 .env
 db_data/
+.gradle-tmp/
