@@ -16,6 +16,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
         "eureka.client.enabled=false",
         "spring.cloud.config.enabled=false",
+        "spring.rabbitmq.listener.simple.auto-startup=false",
+        "spring.rabbitmq.listener.direct.auto-startup=false",
         "jwt.secret=ZmFrZS1qd3Qtc2VjcmV0LWtleS1mb3ItdGVzdHMtZmFrZS1qd3Qtc2VjcmV0"
 })
 class UserserviceApplicationTests {

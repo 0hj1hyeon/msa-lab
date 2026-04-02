@@ -13,9 +13,11 @@ import java.util.UUID;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderEventPublisher orderEventPublisher;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(OrderRepository orderRepository, OrderEventPublisher orderEventPublisher) {
         this.orderRepository = orderRepository;
+        this.orderEventPublisher = orderEventPublisher;
     }
 
     public OrderDto createOrder(OrderDto orderDto) {
@@ -31,6 +33,7 @@ public class OrderService {
         order.setTotalPrice(orderDto.getTotalPrice());
 
         orderRepository.save(order);
+        orderEventPublisher.publishOrderCreated(orderDto);
 
         return orderDto;
     }
