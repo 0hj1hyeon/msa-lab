@@ -87,6 +87,18 @@ class UserServiceTest {
     }
 
     @Test
+    void getUserByUserId_returnsUserWithEmptyOrdersWhenOrderServiceFails() {
+        when(userRepository.findByUserId("user-123")).thenReturn(Optional.of(user));
+        when(orderServiceClient.getOrders("user-123")).thenThrow(new RuntimeException("orderservice unavailable"));
+
+        UserDto result = userService.getUserByUserId("user-123");
+
+        assertThat(result.getUserId()).isEqualTo("user-123");
+        assertThat(result.getUsername()).isEqualTo("alice");
+        assertThat(result.getOrders()).isEmpty();
+    }
+
+    @Test
     void createUser_savesEncodedPassword() {
         UserDto request = new UserDto();
         request.setUsername("alice");

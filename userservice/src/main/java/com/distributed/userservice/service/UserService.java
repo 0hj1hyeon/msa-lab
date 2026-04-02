@@ -6,6 +6,8 @@ import com.distributed.userservice.dto.ResponseOrder;
 import com.distributed.userservice.dto.UserDto;
 import com.distributed.userservice.repository.UserRepository;
 import com.distributed.userservice.util.JwtTokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,8 @@ import java.util.UUID;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
     private final JwtTokenProvider tokenProvider;
@@ -44,11 +48,19 @@ public class UserService {
         userDto.setUserId(user.getUserId());
         userDto.setUsername(user.getUsername());
 
-        /* [핵심] Feign Client를 사용하여 주문 서비스 호출 */
-        List<ResponseOrder> ordersList = orderServiceClient.getOrders(userId);
+        List<ResponseOrder> ordersList = getOrdersSafely(userId);
         userDto.setOrders(ordersList);
 
         return userDto;
+    }
+
+    private List<ResponseOrder> getOrdersSafely(String userId) {
+        try {
+            return orderServiceClient.getOrders(userId);
+        } catch (Exception e) {
+            log.warn("주문 서비스 호출에 실패하여 빈 주문 목록으로 대체합니다. userId={}", userId, e);
+            return List.of();
+        }
     }
 
     // [추가] 회원가입
