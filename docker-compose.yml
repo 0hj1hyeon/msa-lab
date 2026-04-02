@@ -47,6 +47,19 @@ services:
       discoveryservice:
         condition: service_started
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    networks:
+      - msa-network
+
   userservice:
     build: ./userservice
     restart: unless-stopped
@@ -56,12 +69,18 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
     depends_on:
       mysqldb:
         condition: service_healthy
       discoveryservice:
         condition: service_started
       configservice:
+        condition: service_started
+      rabbitmq:
         condition: service_started
     networks:
       - msa-network
@@ -76,12 +95,18 @@ services:
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discoveryservice:8761/eureka/
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
     depends_on:
       mysqldb:
         condition: service_healthy
       discoveryservice:
         condition: service_started
       configservice:
+        condition: service_started
+      rabbitmq:
         condition: service_started
     networks:
       - msa-network
