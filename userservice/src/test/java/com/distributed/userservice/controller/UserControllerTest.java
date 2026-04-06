@@ -1,6 +1,8 @@
 package com.distributed.userservice.controller;
 
+import com.distributed.userservice.dto.OrderEventHistoryDto;
 import com.distributed.userservice.dto.UserDto;
+import com.distributed.userservice.service.OrderEventHistoryService;
 import com.distributed.userservice.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,9 @@ class UserControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private OrderEventHistoryService orderEventHistoryService;
 
     @BeforeEach
     void printTestName(TestInfo testInfo) {
@@ -77,6 +82,26 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.userId").value("user-123"))
                 .andExpect(jsonPath("$.username").value("alice"));
+    }
+
+    @Test
+    void getOrderEventHistory_returnsSavedEvents() throws Exception {
+        OrderEventHistoryDto historyDto = OrderEventHistoryDto.builder()
+                .orderId("order-1")
+                .userId("user-123")
+                .productId("product-1")
+                .qty(2)
+                .unitPrice(1000)
+                .totalPrice(2000)
+                .build();
+
+        when(orderEventHistoryService.getOrderEventHistory("user-123")).thenReturn(List.of(historyDto));
+
+        mockMvc.perform(get("/users/user-123/order-events"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].orderId").value("order-1"))
+                .andExpect(jsonPath("$[0].userId").value("user-123"))
+                .andExpect(jsonPath("$[0].totalPrice").value(2000));
     }
 
     @Test
