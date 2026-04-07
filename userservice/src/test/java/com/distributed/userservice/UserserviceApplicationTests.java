@@ -2,6 +2,7 @@ package com.distributed.userservice;
 
 import com.distributed.userservice.client.OrderServiceClient;
 import com.distributed.userservice.repository.OrderEventHistoryRepository;
+import com.distributed.userservice.repository.UserNotificationRepository;
 import com.distributed.userservice.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,9 @@ class UserserviceApplicationTests {
 
     @MockBean
     private OrderEventHistoryRepository orderEventHistoryRepository;
+
+    @MockBean
+    private UserNotificationRepository userNotificationRepository;
 
     @BeforeEach
     void printTestName(TestInfo testInfo) {

@@ -1,8 +1,10 @@
 package com.distributed.userservice.controller;
 
 import com.distributed.userservice.dto.OrderEventHistoryDto;
+import com.distributed.userservice.dto.UserNotificationDto;
 import com.distributed.userservice.dto.UserDto;
 import com.distributed.userservice.service.OrderEventHistoryService;
+import com.distributed.userservice.service.UserNotificationService;
 import com.distributed.userservice.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,9 @@ class UserControllerTest {
 
     @MockBean
     private OrderEventHistoryService orderEventHistoryService;
+
+    @MockBean
+    private UserNotificationService userNotificationService;
 
     @BeforeEach
     void printTestName(TestInfo testInfo) {
@@ -102,6 +107,25 @@ class UserControllerTest {
                 .andExpect(jsonPath("$[0].orderId").value("order-1"))
                 .andExpect(jsonPath("$[0].userId").value("user-123"))
                 .andExpect(jsonPath("$[0].totalPrice").value(2000));
+    }
+
+    @Test
+    void getNotifications_returnsSavedNotifications() throws Exception {
+        UserNotificationDto notificationDto = UserNotificationDto.builder()
+                .userId("user-123")
+                .orderId("order-1")
+                .title("주문이 생성되었습니다.")
+                .message("상품 product-1 주문이 정상적으로 생성되었습니다.")
+                .read(false)
+                .build();
+
+        when(userNotificationService.getNotifications("user-123")).thenReturn(List.of(notificationDto));
+
+        mockMvc.perform(get("/users/user-123/notifications"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].orderId").value("order-1"))
+                .andExpect(jsonPath("$[0].title").value("주문이 생성되었습니다."))
+                .andExpect(jsonPath("$[0].read").value(false));
     }
 
     @Test
