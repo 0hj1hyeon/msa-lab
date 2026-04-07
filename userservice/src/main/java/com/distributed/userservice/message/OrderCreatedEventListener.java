@@ -16,7 +16,7 @@ public class OrderCreatedEventListener {
         this.orderEventHistoryService = orderEventHistoryService;
     }
 
-    @RabbitListener(queues = "${app.rabbitmq.order-created.queue}")
+    @RabbitListener(queues = "${app.rabbitmq.order-created.history-queue}")
     public void handle(OrderCreatedEvent event) {
         orderEventHistoryService.saveOrderCreatedEvent(event);
         log.info("RabbitMQ 주문 생성 이벤트 수신 완료. orderId={}, userId={}, productId={}",
