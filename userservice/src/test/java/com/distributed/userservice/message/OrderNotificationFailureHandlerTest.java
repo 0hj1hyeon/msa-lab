@@ -1,6 +1,8 @@
 package com.distributed.userservice.message;
 
 import com.distributed.userservice.dto.OrderCreatedEvent;
+import com.distributed.userservice.exception.NonRetryableNotificationException;
+import com.distributed.userservice.exception.RetryableNotificationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -60,6 +62,49 @@ class OrderNotificationFailureHandlerTest {
                 .build();
 
         assertThat(orderNotificationFailureHandler.shouldMoveToDlq(message)).isTrue();
+    }
+
+    @Test
+    void determineFailureAction_returnsMoveToDlqForNonRetryableException() {
+        Message message = MessageBuilder.withBody(new byte[0]).build();
+
+        OrderNotificationFailureHandler.FailureAction result =
+                orderNotificationFailureHandler.determineFailureAction(
+                        message,
+                        new NonRetryableNotificationException("invalid event")
+                );
+
+        assertThat(result).isEqualTo(OrderNotificationFailureHandler.FailureAction.MOVE_TO_DLQ);
+    }
+
+    @Test
+    void determineFailureAction_returnsRetryForRetryableExceptionBeforeThreshold() {
+        Message message = MessageBuilder.withBody(new byte[0])
+                .setHeader("x-death", List.of(Map.of("queue", "order.notification.queue", "count", 2L)))
+                .build();
+
+        OrderNotificationFailureHandler.FailureAction result =
+                orderNotificationFailureHandler.determineFailureAction(
+                        message,
+                        new RetryableNotificationException("temporary failure", new RuntimeException("db down"))
+                );
+
+        assertThat(result).isEqualTo(OrderNotificationFailureHandler.FailureAction.RETRY);
+    }
+
+    @Test
+    void determineFailureAction_returnsMoveToDlqForRetryableExceptionAfterThreshold() {
+        Message message = MessageBuilder.withBody(new byte[0])
+                .setHeader("x-death", List.of(Map.of("queue", "order.notification.queue", "count", 3L)))
+                .build();
+
+        OrderNotificationFailureHandler.FailureAction result =
+                orderNotificationFailureHandler.determineFailureAction(
+                        message,
+                        new RetryableNotificationException("temporary failure", new RuntimeException("db down"))
+                );
+
+        assertThat(result).isEqualTo(OrderNotificationFailureHandler.FailureAction.MOVE_TO_DLQ);
     }
 
     @Test

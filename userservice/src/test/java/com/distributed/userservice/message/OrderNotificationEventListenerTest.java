@@ -1,6 +1,8 @@
 package com.distributed.userservice.message;
 
 import com.distributed.userservice.dto.OrderCreatedEvent;
+import com.distributed.userservice.exception.NonRetryableNotificationException;
+import com.distributed.userservice.exception.RetryableNotificationException;
 import com.distributed.userservice.service.UserNotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,13 +71,16 @@ class OrderNotificationEventListenerTest {
 
         Message message = MessageBuilder.withBody(new byte[0]).build();
 
-        doThrow(new RuntimeException("temporary failure")).when(userNotificationService).saveOrderCreatedNotification(event);
-        when(orderNotificationFailureHandler.shouldMoveToDlq(message)).thenReturn(false);
+        RetryableNotificationException exception =
+                new RetryableNotificationException("temporary failure", new RuntimeException("db down"));
+        doThrow(exception).when(userNotificationService).saveOrderCreatedNotification(event);
+        when(orderNotificationFailureHandler.determineFailureAction(message, exception))
+                .thenReturn(OrderNotificationFailureHandler.FailureAction.RETRY);
 
         assertThatThrownBy(() -> orderNotificationEventListener.handle(event, message))
                 .isInstanceOf(AmqpRejectAndDontRequeueException.class);
 
-        verify(orderNotificationFailureHandler, never()).publishToDlq(eq(event), any(RuntimeException.class));
+        verify(orderNotificationFailureHandler, never()).publishToDlq(eq(event), any(RetryableNotificationException.class));
     }
 
     @Test
@@ -91,11 +96,38 @@ class OrderNotificationEventListenerTest {
 
         Message message = MessageBuilder.withBody(new byte[0]).build();
 
-        doThrow(new RuntimeException("permanent failure")).when(userNotificationService).saveOrderCreatedNotification(event);
-        when(orderNotificationFailureHandler.shouldMoveToDlq(message)).thenReturn(true);
+        RetryableNotificationException exception =
+                new RetryableNotificationException("permanent failure", new RuntimeException("db down"));
+        doThrow(exception).when(userNotificationService).saveOrderCreatedNotification(event);
+        when(orderNotificationFailureHandler.determineFailureAction(message, exception))
+                .thenReturn(OrderNotificationFailureHandler.FailureAction.MOVE_TO_DLQ);
 
         orderNotificationEventListener.handle(event, message);
 
-        verify(orderNotificationFailureHandler).publishToDlq(eq(event), any(RuntimeException.class));
+        verify(orderNotificationFailureHandler).publishToDlq(eq(event), any(RetryableNotificationException.class));
+    }
+
+    @Test
+    void handle_publishesToDlqImmediatelyForNonRetryableException() {
+        OrderCreatedEvent event = OrderCreatedEvent.builder()
+                .orderId("order-1")
+                .userId("user-123")
+                .productId("product-1")
+                .qty(2)
+                .unitPrice(1000)
+                .totalPrice(2000)
+                .build();
+
+        Message message = MessageBuilder.withBody(new byte[0]).build();
+
+        NonRetryableNotificationException exception =
+                new NonRetryableNotificationException("user not found");
+        doThrow(exception).when(userNotificationService).saveOrderCreatedNotification(event);
+        when(orderNotificationFailureHandler.determineFailureAction(message, exception))
+                .thenReturn(OrderNotificationFailureHandler.FailureAction.MOVE_TO_DLQ);
+
+        orderNotificationEventListener.handle(event, message);
+
+        verify(orderNotificationFailureHandler).publishToDlq(eq(event), any(NonRetryableNotificationException.class));
     }
 }
