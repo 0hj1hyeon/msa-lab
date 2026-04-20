@@ -1,6 +1,7 @@
 package com.distributed.userservice.message;
 
 import com.distributed.userservice.dto.OrderCreatedEvent;
+import com.distributed.userservice.exception.NonRetryableNotificationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -38,9 +39,22 @@ public class OrderNotificationFailureHandler {
         return getNotificationDeathCount(message) >= maxRetryCount;
     }
 
+    public FailureAction determineFailureAction(Message message, Exception exception) {
+        if (exception instanceof NonRetryableNotificationException) {
+            return FailureAction.MOVE_TO_DLQ;
+        }
+
+        if (shouldMoveToDlq(message)) {
+            return FailureAction.MOVE_TO_DLQ;
+        }
+
+        return FailureAction.RETRY;
+    }
+
     public void publishToDlq(OrderCreatedEvent event, Exception exception) {
         rabbitTemplate.convertAndSend(deadLetterExchange, deadLetterRoutingKey, event, outgoingMessage -> {
             outgoingMessage.getMessageProperties().setHeader("x-error-message", exception.getMessage());
+            outgoingMessage.getMessageProperties().setHeader("x-error-type", exception.getClass().getSimpleName());
             return outgoingMessage;
         });
 
@@ -66,5 +80,10 @@ public class OrderNotificationFailureHandler {
                 .mapToLong(Number::longValue)
                 .findFirst()
                 .orElse(0L);
+    }
+
+    public enum FailureAction {
+        RETRY,
+        MOVE_TO_DLQ
     }
 }

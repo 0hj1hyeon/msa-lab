@@ -27,7 +27,14 @@ public class OrderNotificationEventListener {
             userNotificationService.saveOrderCreatedNotification(event);
             log.info("RabbitMQ 알림 큐 처리 완료. orderId={}, userId={}", event.getOrderId(), event.getUserId());
         } catch (Exception exception) {
-            if (orderNotificationFailureHandler.shouldMoveToDlq(message)) {
+            OrderNotificationFailureHandler.FailureAction failureAction =
+                    orderNotificationFailureHandler.determineFailureAction(message, exception);
+
+            if (failureAction == OrderNotificationFailureHandler.FailureAction.MOVE_TO_DLQ) {
+                log.error("RabbitMQ 알림 큐 처리 실패. DLQ로 이동시킵니다. orderId={}, errorType={}, reason={}",
+                        event.getOrderId(),
+                        exception.getClass().getSimpleName(),
+                        exception.getMessage());
                 orderNotificationFailureHandler.publishToDlq(event, exception);
                 return;
             }
