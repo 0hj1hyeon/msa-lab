@@ -32,6 +32,9 @@ class OrderNotificationEventListenerTest {
     @Mock
     private OrderNotificationFailureHandler orderNotificationFailureHandler;
 
+    @Mock
+    private OrderCompensationEventPublisher orderCompensationEventPublisher;
+
     @InjectMocks
     private OrderNotificationEventListener orderNotificationEventListener;
 
@@ -81,6 +84,7 @@ class OrderNotificationEventListenerTest {
                 .isInstanceOf(AmqpRejectAndDontRequeueException.class);
 
         verify(orderNotificationFailureHandler, never()).publishToDlq(eq(event), any(RetryableNotificationException.class));
+        verify(orderCompensationEventPublisher, never()).publishNotificationCompensation(eq(event), any(RetryableNotificationException.class));
     }
 
     @Test
@@ -105,6 +109,7 @@ class OrderNotificationEventListenerTest {
         orderNotificationEventListener.handle(event, message);
 
         verify(orderNotificationFailureHandler).publishToDlq(eq(event), any(RetryableNotificationException.class));
+        verify(orderCompensationEventPublisher).publishNotificationCompensation(eq(event), any(RetryableNotificationException.class));
     }
 
     @Test
@@ -129,5 +134,6 @@ class OrderNotificationEventListenerTest {
         orderNotificationEventListener.handle(event, message);
 
         verify(orderNotificationFailureHandler).publishToDlq(eq(event), any(NonRetryableNotificationException.class));
+        verify(orderCompensationEventPublisher).publishNotificationCompensation(eq(event), any(NonRetryableNotificationException.class));
     }
 }

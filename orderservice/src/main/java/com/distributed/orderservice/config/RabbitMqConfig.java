@@ -37,6 +37,11 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue orderCompensationQueue(@Value("${app.rabbitmq.order-compensation.queue}") String queueName) {
+        return new Queue(queueName, true);
+    }
+
+    @Bean
     public DirectExchange orderExchange(@Value("${app.rabbitmq.order-created.exchange}") String exchangeName) {
         return new DirectExchange(exchangeName, true, false);
     }
@@ -101,6 +106,13 @@ public class RabbitMqConfig {
                                        DirectExchange orderExchange,
                                        @Value("${app.rabbitmq.order-created.routing-key}") String routingKey) {
         return BindingBuilder.bind(orderLoggingQueue).to(orderExchange).with(routingKey);
+    }
+
+    @Bean
+    public Binding orderCompensationBinding(@Qualifier("orderCompensationQueue") Queue orderCompensationQueue,
+                                            DirectExchange orderExchange,
+                                            @Value("${app.rabbitmq.order-compensation.routing-key}") String routingKey) {
+        return BindingBuilder.bind(orderCompensationQueue).to(orderExchange).with(routingKey);
     }
 
     @Bean

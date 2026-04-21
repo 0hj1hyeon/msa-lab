@@ -14,11 +14,14 @@ public class OrderNotificationEventListener {
 
     private final UserNotificationService userNotificationService;
     private final OrderNotificationFailureHandler orderNotificationFailureHandler;
+    private final OrderCompensationEventPublisher orderCompensationEventPublisher;
 
     public OrderNotificationEventListener(UserNotificationService userNotificationService,
-                                          OrderNotificationFailureHandler orderNotificationFailureHandler) {
+                                          OrderNotificationFailureHandler orderNotificationFailureHandler,
+                                          OrderCompensationEventPublisher orderCompensationEventPublisher) {
         this.userNotificationService = userNotificationService;
         this.orderNotificationFailureHandler = orderNotificationFailureHandler;
+        this.orderCompensationEventPublisher = orderCompensationEventPublisher;
     }
 
     @RabbitListener(queues = "${app.rabbitmq.order-created.notification-queue}")
@@ -36,6 +39,7 @@ public class OrderNotificationEventListener {
                         exception.getClass().getSimpleName(),
                         exception.getMessage());
                 orderNotificationFailureHandler.publishToDlq(event, exception);
+                orderCompensationEventPublisher.publishNotificationCompensation(event, exception);
                 return;
             }
 
