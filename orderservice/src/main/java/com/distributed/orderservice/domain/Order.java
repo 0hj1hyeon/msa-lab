@@ -36,6 +36,10 @@ public class Order implements Serializable {
     @Column(nullable = false, unique = true)
     private String orderId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderStatus status;
+
     @CreationTimestamp
     private Date createdAt;
 }
