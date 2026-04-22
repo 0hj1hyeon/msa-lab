@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "eureka.client.enabled=false",
         "spring.cloud.config.enabled=false",
         "spring.rabbitmq.listener.simple.auto-startup=false",
-        "spring.rabbitmq.listener.direct.auto-startup=false"
+        "spring.rabbitmq.listener.direct.auto-startup=false",
+        "spring.kafka.listener.auto-startup=false"
 })
 class OrderserviceApplicationTests {
 
