@@ -18,10 +18,14 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderEventPublisher orderEventPublisher;
+    private final OrderKafkaProducer orderKafkaProducer;
 
-    public OrderService(OrderRepository orderRepository, OrderEventPublisher orderEventPublisher) {
+    public OrderService(OrderRepository orderRepository,
+                        OrderEventPublisher orderEventPublisher,
+                        OrderKafkaProducer orderKafkaProducer) {
         this.orderRepository = orderRepository;
         this.orderEventPublisher = orderEventPublisher;
+        this.orderKafkaProducer = orderKafkaProducer;
     }
 
     public OrderDto createOrder(OrderDto orderDto) {
@@ -39,6 +43,7 @@ public class OrderService {
 
         orderRepository.save(order);
         orderEventPublisher.publishOrderCreated(orderDto);
+        orderKafkaProducer.publish(orderDto);
 
         return orderDto;
     }

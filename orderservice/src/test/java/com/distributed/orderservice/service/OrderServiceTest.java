@@ -30,6 +30,9 @@ class OrderServiceTest {
     @Mock
     private OrderEventPublisher orderEventPublisher;
 
+    @Mock
+    private OrderKafkaProducer orderKafkaProducer;
+
     @InjectMocks
     private OrderService orderService;
 
@@ -53,6 +56,7 @@ class OrderServiceTest {
         ArgumentCaptor<Order> savedOrder = ArgumentCaptor.forClass(Order.class);
         verify(orderRepository).save(savedOrder.capture());
         verify(orderEventPublisher).publishOrderCreated(createdOrder);
+        verify(orderKafkaProducer).publish(createdOrder);
 
         assertThat(createdOrder.getOrderId()).isNotBlank();
         assertThat(createdOrder.getTotalPrice()).isEqualTo(3000);

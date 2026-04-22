@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.cloud.config.enabled=false",
         "spring.rabbitmq.listener.simple.auto-startup=false",
         "spring.rabbitmq.listener.direct.auto-startup=false",
+        "spring.kafka.listener.auto-startup=false",
+        "spring.kafka.bootstrap-servers=localhost:9092",
         "jwt.secret=ZmFrZS1qd3Qtc2VjcmV0LWtleS1mb3ItdGVzdHMtZmFrZS1qd3Qtc2VjcmV0"
 })
 class UserserviceApplicationTests {
