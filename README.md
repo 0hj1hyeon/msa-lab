@@ -1,7 +1,7 @@
 # msa-lab
 
 Spring Boot와 Spring Cloud를 기반으로 구성한 MSA 학습 프로젝트입니다.  
-서비스 디스커버리, API Gateway, Config Server, 동기 통신(OpenFeign), 비동기 메시징(RabbitMQ), Retry/DLQ, 학습용 Saga 보상 흐름, Kafka 비교 구조까지 직접 구성하며 백엔드 실무에서 자주 만나는 흐름을 단계적으로 학습하는 것을 목표로 했습니다.
+이 프로젝트는 단순한 서비스 분리에서 끝나지 않고, `기본적인 MSA 구성 -> 서비스 간 통신 -> 이벤트 기반 처리 -> 장애 대응(Retry/DLQ) -> 보상 흐름(Saga) -> 메시징 시스템 비교(RabbitMQ / Kafka)` 순서로 확장해가며 전체 백엔드 흐름을 학습하는 것을 목표로 했습니다.
 
 ## 프로젝트 목표
 - MSA 기본 구성 요소를 직접 조합해보기
@@ -45,35 +45,41 @@ Spring Boot와 Spring Cloud를 기반으로 구성한 MSA 학습 프로젝트입
 - `mysqldb`
   서비스 데이터 저장용 MySQL
 
-## 아키텍처 요약
-1. 클라이언트 요청은 `API Gateway`를 통해 각 서비스로 전달됩니다.
-2. 각 서비스는 `Eureka`에 등록되고 서비스 이름 기반으로 통신합니다.
-3. 설정 값은 `Config Server`를 통해 외부 Git 저장소에서 가져옵니다.
-4. `userservice`는 `OpenFeign`을 사용해 `orderservice`를 동기 호출합니다.
-5. `orderservice`는 주문 생성 후 같은 `OrderCreatedEvent`를 RabbitMQ와 Kafka로 각각 발행합니다.
-6. `userservice`는 RabbitMQ와 Kafka에서 동일한 주문 생성 이벤트를 소비해 알림 저장 흐름을 비교할 수 있습니다.
-7. RabbitMQ notification 큐는 Retry/DLQ를 통해 실패를 제어합니다.
-8. notification 최종 실패 시 `userservice`는 Saga 보상 이벤트를 발행하고, `orderservice`는 이를 소비해 주문 상태를 변경합니다.
+## 프로젝트 흐름
+이 프로젝트는 아래 순서로 기능과 구조를 확장하며 발전했습니다.
+
+1. `Spring Cloud 기반 MSA 기본 구조`
+   Gateway, Eureka, Config Server를 먼저 구성해 서비스 분리와 중앙 설정 관리 흐름을 만들었습니다.
+2. `서비스 간 동기 통신`
+   `userservice`가 `orderservice`를 OpenFeign으로 호출해 사용자 조회와 주문 조회를 연결했습니다.
+3. `이벤트 기반 비동기 처리`
+   주문 생성 이후 후속 처리를 분리하기 위해 `OrderCreatedEvent`를 발행하고, `userservice`가 이를 소비하도록 구성했습니다.
+4. `장애 대응과 실패 제어`
+   notification 처리에는 Retry / DLQ와 예외 분류를 적용해 메시지 처리 실패를 제어했습니다.
+5. `보상 흐름 학습`
+   notification 최종 실패 시 보상 이벤트를 발행하고, `orderservice`가 주문 상태를 변경하는 학습용 Saga 흐름을 구성했습니다.
+6. `메시징 시스템 비교`
+   같은 `OrderCreatedEvent`를 Kafka로도 발행/소비하게 만들어 RabbitMQ와 Kafka 구조를 같은 프로젝트 안에서 비교할 수 있게 했습니다.
 
 ## 구현한 핵심 기능
-### 1. 서비스 디스커버리와 중앙 설정 관리
+### 1. MSA 기본 구조 구성
 - Eureka 기반 서비스 등록/조회
 - Config Server 기반 외부 설정 분리
 - Docker 환경에서도 서비스 이름 기반 통신 가능하도록 구성
 
-### 2. 동기 통신
+### 2. 서비스 간 동기 통신
 - `userservice -> orderservice` OpenFeign 호출
 - 사용자 조회 시 주문 목록을 함께 조합해서 반환
 - 주문 서비스 장애 시 사용자 조회 전체가 깨지지 않도록 예외 처리 추가
 
-### 3. RabbitMQ 기반 이벤트 처리
+### 3. 이벤트 기반 후속 처리
 - `orderservice`에서 주문 생성 시 `OrderCreatedEvent` 발행
 - `userservice`에서 history / notification / logging 큐로 역할 분리 소비
 - 주문 이벤트 이력 저장
 - 알림 저장
 - 운영 로그 처리
 
-### 4. Retry / DLQ
+### 4. 장애 대응 구조
 - notification 큐에 Retry + DLQ 구조 적용
 - Retry 가능한 예외와 불가능한 예외를 분리
 - Retry 가능한 예외는 retry 큐 -> TTL -> 재처리 -> DLQ 흐름 유지
@@ -86,13 +92,13 @@ Spring Boot와 Spring Cloud를 기반으로 구성한 MSA 학습 프로젝트입
 - `orderservice`에서 보상 이벤트를 소비하여 주문 상태를 `CREATED -> COMPENSATED`로 변경
 - 새 서비스를 추가하지 않고도 보상 트랜잭션 흐름을 코드로 확인 가능
 
-### 6. Kafka 비교 구조
+### 6. 메시징 시스템 비교
 - 기존 RabbitMQ 구조는 그대로 유지
 - 같은 `OrderCreatedEvent`를 Kafka로도 발행
 - `userservice`에서 Kafka consumer로 동일 이벤트 소비
 - 같은 이벤트를 RabbitMQ와 Kafka에서 어떻게 다루는지 직접 비교 가능
 
-### 7. 테스트 보강
+### 7. 테스트와 실행 환경
 - `userservice` 서비스/컨트롤러 테스트 추가
 - 주문 서비스 장애 시 빈 목록 반환 테스트 추가
 - RabbitMQ Retry/DLQ 테스트 추가
@@ -100,20 +106,33 @@ Spring Boot와 Spring Cloud를 기반으로 구성한 MSA 학습 프로젝트입
 - Kafka producer / consumer 테스트 추가
 - 외부 인프라 없이 컨텍스트가 뜨도록 스모크 테스트 정리
 
-## 이벤트 흐름
-### RabbitMQ 기본 흐름
+## 전체 흐름
+### 1. 기본 요청 흐름
+```text
+Client
+  -> API Gateway
+  -> userservice / orderservice
+
+userservice
+  -> OpenFeign
+  -> orderservice
+  -> 사용자 정보 + 주문 목록 조합
+```
+
+### 2. 주문 생성 이후 후속 처리 흐름
 ```text
 orderservice
   -> OrderCreatedEvent 발행
-  -> order.exchange / order.created
+  -> RabbitMQ / Kafka
 
 userservice
-  -> history queue 소비
-  -> notification queue 소비
-  -> logging queue 소비
+  -> 이벤트 소비
+  -> history 저장
+  -> notification 저장
+  -> logging 처리
 ```
 
-### RabbitMQ Retry / DLQ 흐름
+### 3. 실패 제어 흐름
 ```text
 order.notification.queue
   -> 처리 실패
@@ -124,7 +143,7 @@ order.notification.queue
   -> order.notification.dlq
 ```
 
-### Saga 보상 흐름
+### 4. 보상 흐름
 ```text
 orderservice 주문 생성
   -> OrderCreatedEvent 발행
@@ -135,7 +154,7 @@ orderservice 주문 생성
   -> 주문 상태 CREATED -> COMPENSATED
 ```
 
-### Kafka 비교 흐름
+### 5. 비교 흐름
 ```text
 orderservice
   -> RabbitMQ로 OrderCreatedEvent 발행
@@ -147,22 +166,10 @@ userservice
   -> 같은 알림 저장 로직 수행
 ```
 
-## RabbitMQ와 Kafka 비교
-### RabbitMQ
-- exchange, queue, routing key 중심 구조
-- Retry / DLQ 설계가 직관적
-- 작업 큐, 후속 처리 분리, 실패 제어에 강점
-
-### Kafka
-- topic, partition, consumer group 중심 구조
-- 이벤트를 로그처럼 저장하고 여러 consumer group이 독립적으로 읽음
-- 이벤트 스트리밍, 재처리, 확장성 비교에 강점
-
-### 이 프로젝트에서의 비교 포인트
-- 같은 `OrderCreatedEvent`를 두 메시징 시스템에서 모두 발행
-- `userservice`에서 두 방식 모두 소비
-- RabbitMQ는 queue 기반 소비 구조
-- Kafka는 topic + consumer group 기반 소비 구조
+## 메시징 비교 요약
+- RabbitMQ는 `후속 처리 분리`, `Retry / DLQ`, `실패 제어`를 학습하는 데 집중했습니다.
+- Kafka는 `같은 이벤트를 다른 방식으로 발행/소비하는 구조`를 비교하는 용도로 최소 적용했습니다.
+- 이 프로젝트의 핵심은 특정 브로커 자체보다, `이벤트 흐름이 서비스 설계에 어떤 영향을 주는지`를 비교해보는 것입니다.
 
 ## 디렉토리 구조
 ```text
@@ -225,23 +232,23 @@ bash ./gradlew cleanTest test
 ```
 
 ## 학습 포인트
-### 동기 통신과 비동기 통신을 함께 사용
-- 동기 호출은 즉시 응답이 필요한 조회 흐름에 사용
-- RabbitMQ와 Kafka는 주문 생성 이후 후속 처리 분리에 사용
+### 구조를 단계적으로 확장하는 경험
+- 처음부터 복잡한 구조를 한 번에 만들기보다, 기본 MSA 구성 위에 통신 방식과 장애 대응을 차례대로 얹었습니다.
+- 프로젝트가 커질수록 서비스 책임, 이벤트 흐름, 상태 관리가 어떻게 달라지는지 직접 확인할 수 있었습니다.
 
-### 장애 대응
-- 주문 서비스 호출 실패 시 `userservice`는 빈 주문 목록으로 응답
-- RabbitMQ notification 큐는 Retry / DLQ로 장애를 제어
-- 예외를 retryable / non-retryable로 나눠 불필요한 재시도를 줄임
+### 동기 통신과 비동기 통신의 역할 분리
+- 동기 호출은 즉시 응답이 필요한 조회 흐름에 사용했습니다.
+- 비동기 이벤트는 주문 생성 이후 후속 처리와 책임 분리에 사용했습니다.
 
-### 이벤트 기반 확장성
-- 주문 생성 이벤트를 history / notification / logging으로 분리 소비
-- 동일한 이벤트를 Kafka로도 흘려 비교 가능
-- 이후 통계, 모니터링, 재처리, 추가 consumer group 확장 가능
+### 실패를 설계에 포함하는 경험
+- 주문 서비스 장애 시 `userservice`는 빈 주문 목록으로 응답하도록 만들었습니다.
+- notification 처리 실패에는 Retry / DLQ와 예외 분류를 적용해 장애를 단순 예외가 아니라 흐름으로 다뤘습니다.
 
-### Saga 개념 학습
-- 중앙 오케스트레이터 없이 이벤트 기반 Choreography 방식으로 보상 흐름 구성
-- 최종 실패 시 보상 이벤트를 발행하고 다른 서비스가 상태를 바꾸는 흐름 경험
+### 상태 변경 중심으로 Saga 이해하기
+- 새로운 서비스를 더 만들지 않고도, 최종 실패 -> 보상 이벤트 발행 -> 주문 상태 변경 흐름으로 Saga 개념을 학습할 수 있게 했습니다.
+
+### 같은 흐름을 서로 다른 브로커로 비교하기
+- RabbitMQ와 Kafka를 각각 기술 자체로 보기보다, 같은 `OrderCreatedEvent`가 두 구조에서 어떻게 처리되는지 비교하는 데 초점을 맞췄습니다.
 
 ## 앞으로 확장해볼 주제
 - Kafka consumer group을 history / logging까지 확장
@@ -252,11 +259,14 @@ bash ./gradlew cleanTest test
 - 테스트 커버리지 확대
 
 ## 회고
-이 프로젝트를 통해 단순 CRUD를 넘어서 MSA에서 자주 등장하는 문제를 직접 다뤘습니다.
+이 프로젝트를 통해 단순 CRUD를 넘어서, 서비스를 분리한 이후 실제로 마주치는 흐름을 단계적으로 경험했습니다.
 
 - 서비스 간 통신 방식 선택
 - 설정 분리와 서비스 등록
 - Docker 기반 실행 환경 구성
+- 이벤트 기반 후속 처리
+- 실패 제어와 보상 흐름
+- 서로 다른 메시징 시스템 비교
 - 테스트 가능한 코드 구조 만들기
 - RabbitMQ 기반 비동기 처리와 Retry / DLQ
 - 이벤트 기반 Saga 보상 흐름
