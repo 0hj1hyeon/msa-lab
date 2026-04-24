@@ -237,12 +237,40 @@ docker compose up --build
 - RabbitMQ와 Kafka를 각각 기술 자체로 보기보다, 같은 `OrderCreatedEvent`가 두 구조에서 어떻게 처리되는지 비교하는 데 초점을 맞췄습니다.
 
 ## 앞으로 확장해볼 주제
-- Kafka consumer group을 history / logging까지 확장
-- Kafka Retry / DLQ 또는 재처리 전략 비교
-- 공통 예외 처리 및 로그 표준화
-- 모니터링 / 헬스체크 강화
-- README 아키텍처 다이어그램 시각화
-- 테스트 커버리지 확대
+
+* **Kafka Consumer Group 확장**
+
+  * `order-created-topic`을 기반으로 history / logging consumer group 분리
+  * 하나의 이벤트를 여러 서비스에서 병렬 소비하는 구조 설계
+
+* **Kafka Retry / DLQ 및 재처리 전략 비교**
+
+  * RabbitMQ의 Retry + DLQ 구조와 Kafka의 offset 기반 재처리 방식 비교
+  * Dead Letter Topic(DLT) 설계 및 적용
+
+* **공통 예외 처리 및 로그 표준화**
+
+  * Custom Exception 구조 개선
+  * Kafka / RabbitMQ 이벤트 처리 로그 포맷 통일
+  * Correlation ID 기반 트래킹 구조 설계
+
+* **모니터링 및 헬스 체크 강화**
+
+  * Spring Boot Actuator 적용
+  * 서비스 상태 및 메시지 처리 상태 모니터링
+  * Kafka / RabbitMQ 메트릭 수집
+
+* **아키텍처 다이어그램 시각화**
+
+  * 전체 MSA 구조 (Gateway, Eureka, Config Server 포함)
+  * RabbitMQ / Kafka / Saga 흐름 시각화
+
+* **테스트 커버리지 확대**
+
+  * Kafka Producer / Consumer 테스트 추가
+  * Saga 보상 흐름 테스트
+  * Retry / DLQ 시나리오 테스트
+
 
 ## 회고
 이 프로젝트를 통해 단순 CRUD를 넘어서, 서비스를 분리한 이후 실제로 마주치는 흐름을 단계적으로 경험했습니다.
