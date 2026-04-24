@@ -9,7 +9,6 @@ Spring Boot와 Spring Cloud를 기반으로 구성한 MSA 학습 프로젝트입
 - 메시지 브로커의 장애 대응 방식(Retry/DLQ)을 학습해보기
 - 이벤트 기반 Saga 흐름을 단순한 구조로 이해해보기
 - RabbitMQ와 Kafka를 같은 프로젝트 안에서 비교해보기
-- 백엔드 취업 준비용 포트폴리오 프로젝트로 발전시키기
 
 ## 기술 스택
 - Java 21
