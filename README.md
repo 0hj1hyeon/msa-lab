@@ -218,19 +218,6 @@ docker compose up --build
 - Kafka: `9092`
 - MySQL: `3307`
 
-## 테스트 실행 방법
-### userservice
-```bash
-cd userservice
-bash ./gradlew cleanTest test
-```
-
-### orderservice
-```bash
-cd orderservice
-bash ./gradlew cleanTest test
-```
-
 ## 학습 포인트
 ### 구조를 단계적으로 확장하는 경험
 - 처음부터 복잡한 구조를 한 번에 만들기보다, 기본 MSA 구성 위에 통신 방식과 장애 대응을 차례대로 얹었습니다.
