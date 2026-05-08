@@ -16,8 +16,8 @@ RUN ./gradlew bootJar -x test
 FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
 
-# 빌드 단계에서 생성된 jar 파일을 정확한 경로에서 복사
-COPY --from=builder /app/configservice/build/libs/*.jar app.jar
+# 빌드 단계에서 생성된 jar 파일을 복사
+COPY --from=builder /app/build/libs/*.jar app.jar
 
 # 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]

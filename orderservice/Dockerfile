@@ -18,8 +18,8 @@ RUN ./gradlew bootJar -x test
 FROM amazoncorretto:21-al2023-jdk
 WORKDIR /app
 
-# [핵심 수정] 폴더명(orderservice 등)을 지우고, --from=builder와 절대 경로를 사용합니다.
-COPY --from=builder /app/orderservice/build/libs/*.jar app.jar
+# 빌드 단계에서 생성된 jar 파일만 가져옴
+COPY --from=builder /app/build/libs/*.jar app.jar
 
 # 실행
 ENTRYPOINT ["java", "-jar", "app.jar"]
